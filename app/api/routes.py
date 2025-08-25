@@ -35,8 +35,9 @@ from app.services.templates import TemplateRegistry
 
 api_router = APIRouter()
 
-# Feature flag: enable orchestrated RAG path
-FEATURE_ORCHESTRATOR = os.getenv("FEATURE_ORCHESTRATOR", "0").lower() in {"1", "true", "yes"}
+# Feature flag: evaluate at request-time
+def is_orchestrator_enabled() -> bool:
+    return os.getenv("FEATURE_ORCHESTRATOR", "0").lower() in {"1", "true", "yes"}
 
 # Lightweight singletons for dev
 _STORE = UpsertStore()
@@ -95,11 +96,16 @@ async def query(req: QueryRequest):
     tokens_prompt = None
     tokens_output = None
 
-    if FEATURE_ORCHESTRATOR:
+    if is_orchestrator_enabled():
         retriever = _get_retriever()
         orch = QueryOrchestrator(retriever, _LLM)
         out = orch.run(req.text, language=language, filters={})
-        citations = out.citations
+        # Map internal citations (doc_id/chunk_index/source_url) to API model shape
+        citations = []
+        for c in out.citations:
+            title = f"{c.get('doc_id', '')}#{c.get('chunk_index', '')}".strip('#') or "source"
+            url = c.get("source_url") or None
+            citations.append({"title": title, "url": url})
         answer_text = out.answer
         tokens_prompt = None
         tokens_output = None
@@ -124,7 +130,7 @@ async def query(req: QueryRequest):
             extra={
                 "extra": {
                     "elapsed_ms": elapsed_ms,
-                    "feature_orchestrator": FEATURE_ORCHESTRATOR,
+                    "feature_orchestrator": is_orchestrator_enabled(),
                     "language": language,
                     "request": redact_payload(req.model_dump() if hasattr(req, "model_dump") else {}),
                 }
@@ -214,7 +220,7 @@ async def query_stream(req: QueryRequest):
     prefs_lang = req.preferences.language if req.preferences else None
     language = choose_response_language(detected, prefs_language=prefs_lang, locale=req.locale)
 
-    if not FEATURE_ORCHESTRATOR:
+    if not is_orchestrator_enabled():
         def _placeholder():
             yield f"[{language}] Streaming not enabled. Set FEATURE_ORCHESTRATOR=1."
         return StreamingResponse(_placeholder(), media_type="text/plain", headers={"X-Trace-Id": trace_id})

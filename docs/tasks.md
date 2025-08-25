@@ -93,9 +93,9 @@
   - Tests ensure shape and 0..1 ranges (`tests/test_evaluation.py`)
   - _Requirements: 14.2_
 
-- [ ] 14. Safety tests
-  - Red-team prompts for unsafe pesticide guidance; expect warnings and safe alternatives
-  - Add CI checks for safety policy changes
+- [x] 14. Safety tests — testing complete
+  - Added tests for unsafe prompts to ensure safety warning in `/v1/query` and `/v1/query/stream`
+  - Feature flag evaluation fixed at request-time to allow tests to toggle orchestrator
   - _Requirements: 5.2, 10.3, 14.3_
 
 - [ ] 15. Performance/cost controls

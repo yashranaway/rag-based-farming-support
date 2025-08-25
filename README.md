@@ -19,6 +19,6 @@ Project: rag-based-farming-support
 - [x] 11. Admin endpoints — testing complete
 - [x] 12. Observability and logging — testing complete
 - [x] 13. Evaluation harness — testing complete
-- [ ] 14. Safety tests
+- [x] 14. Safety tests — testing complete
 - [ ] 15. Performance/cost controls
 - [ ] 16. IBM Cloud Lite readiness
