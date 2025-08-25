@@ -75,10 +75,10 @@
   - _Status: Full orchestration implemented with intent classification, external signals (weather/mandi), streaming endpoint, and safety intercept; tests passing_
   - _Requirements: 1.4–1.5, 2.1–2.5, 3.1–3.3, 4.1–4.3, 5.1–5.3, 6.1–6.3, 7.1–7.3, 10.3, 11.1–11.3, 12.1–12.3_
 
-- [ ] 11. Admin endpoints
-  - `POST /v1/admin/reindex` to trigger ingestion for a source; validate configs
-  - Versioned prompt/policy templates and rollback support
-  - Tests for admin flows and validation errors
+- [x] 11. Admin endpoints — testing complete
+  - `POST /v1/admin/reindex` ingests text and refreshes embedding index when enabled; input validation
+  - Versioned prompt/policy templates with set/get/list/rollback endpoints
+  - Tests for validation, CRUD, and rollback behavior
   - _Requirements: 13.1–13.3_
 
 - [ ] 12. Observability and logging (partial)

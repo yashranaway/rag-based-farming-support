@@ -1,13 +1,19 @@
 import os
 import time
 import uuid
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from typing import Dict
 
-from app.api.models import QueryRequest, AnswerResponse
+from app.api.models import (
+    QueryRequest,
+    AnswerResponse,
+    ReindexRequest,
+    TemplateSetRequest,
+    TemplateRollbackRequest,
+)
 from app.services.lang import detect_language, choose_response_language
-from app.services.ingestion import UpsertStore
+from app.services.ingestion import UpsertStore, ingest_text
 from app.services.retrieval import (
     InMemoryRetriever,
     EmbeddingRetriever,
@@ -24,6 +30,7 @@ from app.services.llm import (
 )
 from app.services.embeddings import SimpleTokenizerEmbeddings
 from app.services.vectorstore import vector_store_from_env
+from app.services.templates import TemplateRegistry
 
 api_router = APIRouter()
 
@@ -32,6 +39,7 @@ FEATURE_ORCHESTRATOR = os.getenv("FEATURE_ORCHESTRATOR", "0").lower() in {"1", "
 
 # Lightweight singletons for dev
 _STORE = UpsertStore()
+_TPL = TemplateRegistry()
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "granite-wx").lower()  # granite-wx | granite-replicate | fake
 if LLM_PROVIDER == "granite-replicate":
     _LLM = GraniteReplicateAdapter()
@@ -117,9 +125,63 @@ async def list_sources() -> Dict[str, str]:
 
 
 @api_router.post("/admin/reindex")
-async def admin_reindex():
-    """Trigger reindex (placeholder)."""
-    return {"status": "accepted", "message": "Reindex triggered (stub)."}
+async def admin_reindex(req: ReindexRequest):
+    """Ingest provided text into the store and refresh embedding index if enabled."""
+    text = (req.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="text must be non-empty")
+    ingest_text(
+        _STORE,
+        text,
+        region=req.region,
+        crop=req.crop,
+        source_url=req.source_url,
+        max_chars=req.max_chars or 800,
+        overlap=req.overlap or 100,
+    )
+    # If embedding retriever is active, refresh index
+    if RETRIEVAL_PROVIDER == "embedding":
+        index_store_chunks(_STORE, _EMB, _VS)
+    return {"status": "ok", "message": "ingested"}
+
+
+@api_router.post("/admin/templates/{name}")
+async def admin_template_set(name: str, req: TemplateSetRequest):
+    content = (req.content or "").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="content must be non-empty")
+    tv = _TPL.set(name, content)
+    return {"status": "ok", "name": name, "version": tv.version, "created_at": tv.created_at}
+
+
+@api_router.get("/admin/templates/{name}")
+async def admin_template_current(name: str):
+    tv = _TPL.current(name)
+    if tv is None:
+        raise HTTPException(status_code=404, detail="template not found")
+    return {"name": name, "version": tv.version, "content": tv.content, "created_at": tv.created_at}
+
+
+@api_router.get("/admin/templates/{name}/versions")
+async def admin_template_versions(name: str):
+    versions = _TPL.list_versions(name)
+    return {
+        "name": name,
+        "versions": [
+            {"version": tv.version, "created_at": tv.created_at, "content": tv.content} for tv in versions
+        ],
+    }
+
+
+@api_router.post("/admin/templates/{name}/rollback")
+async def admin_template_rollback(name: str, req: TemplateRollbackRequest):
+    try:
+        tv = _TPL.rollback(name, req.version)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="template not found")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="version not found")
+    return {"status": "ok", "name": name, "version": tv.version, "created_at": tv.created_at}
 
 
 @api_router.post("/query/stream")

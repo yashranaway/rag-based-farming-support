@@ -52,3 +52,21 @@ class AnswerResponse(BaseModel):
     citations: List[Citation] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
     diagnostics: Optional[Diagnostics] = None
+
+
+# Admin models
+class ReindexRequest(BaseModel):
+    text: str
+    region: Optional[str] = None
+    crop: Optional[str] = None
+    source_url: Optional[str] = None
+    max_chars: Optional[int] = 800
+    overlap: Optional[int] = 100
+
+
+class TemplateSetRequest(BaseModel):
+    content: str
+
+
+class TemplateRollbackRequest(BaseModel):
+    version: int
