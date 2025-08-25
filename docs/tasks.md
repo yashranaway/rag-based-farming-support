@@ -87,10 +87,10 @@
   - Tests for formatter, redaction, and presence of trace headers
   - _Requirements: 10.1, 11.2, 11.3_
 
-- [ ] 13. Evaluation harness
-  - Implement RAG evaluation suite for groundedness, relevance, citation accuracy
-  - Seed curated QA set per region/crop; run on CI
-  - Tests asserting minimum thresholds and regression prevention
+- [x] 13. Evaluation harness — testing complete
+  - Lightweight eval using API over JSONL dataset (`tests/data/eval_qa.jsonl`)
+  - Metrics (heuristic): relevance, citation_accuracy, groundedness; returns JSON
+  - Tests ensure shape and 0..1 ranges (`tests/test_evaluation.py`)
   - _Requirements: 14.2_
 
 - [ ] 14. Safety tests

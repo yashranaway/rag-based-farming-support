@@ -73,3 +73,8 @@ External APIs and Data Sources (target, prefer free tiers)
     - File: app/api/routes.py (/v1/admin/*)
     - Status: Reindex endpoint and template CRUD/rollback without auth or rate limits.
     - Replace with: AuthN/Z, rate limiting, request validation, and audit trail.
+
+13) Evaluation harness (dev-only heuristics)
+    - File: app/services/eval.py
+    - Status: Heuristic metrics (groundedness/relevance/citation accuracy) over a small JSONL dataset; uses current stubs.
+    - Replace with: Robust eval with gold references, model-graded judgments, corpus-level reports, and CI gating; optional admin endpoint `/v1/admin/eval` with auth.

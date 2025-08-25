@@ -1,0 +1,2 @@
+{"question": "What are tomato prices in Pune?", "expected_keywords": ["tomato", "price", "pune"], "filters": {"region": "Pune", "crop": "tomato"}}
+{"question": "What's the weather advice for irrigation in Nashik?", "expected_keywords": ["weather", "irrigation", "nashik"], "filters": {"region": "Nashik"}}

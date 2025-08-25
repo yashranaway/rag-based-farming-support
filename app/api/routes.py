@@ -108,13 +108,13 @@ async def query(req: QueryRequest):
     resp = AnswerResponse(
         answer=answer_text,
         language=language,
-        citations=[],
+        citations=citations,
         warnings=[],
         diagnostics={
             "latency_ms": elapsed_ms,
             "tokens_prompt": tokens_prompt,
             "tokens_output": tokens_output,
-            "retrieval_k": 0,
+            "retrieval_k": len(citations) if citations else 0,
         },
     )
     headers = {"X-Trace-Id": trace_id, "X-Elapsed-Ms": str(elapsed_ms)}
