@@ -16,7 +16,12 @@ from app.services.retrieval import (
     RerankerWrapper,
 )
 from app.services.orchestrator import QueryOrchestrator
-from app.services.llm import GraniteAdapter, FakeAdapter
+from app.services.llm import (
+    GraniteAdapter,
+    GraniteWatsonXAdapter,
+    GraniteReplicateAdapter,
+    FakeAdapter,
+)
 from app.services.embeddings import SimpleTokenizerEmbeddings
 from app.services.vectorstore import vector_store_from_env
 
@@ -27,7 +32,13 @@ FEATURE_ORCHESTRATOR = os.getenv("FEATURE_ORCHESTRATOR", "0").lower() in {"1", "
 
 # Lightweight singletons for dev
 _STORE = UpsertStore()
-_LLM = GraniteAdapter() if os.getenv("GRANITE_API_KEY") else FakeAdapter(response="RAG stub answer")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "granite-wx").lower()  # granite-wx | granite-replicate | fake
+if LLM_PROVIDER == "granite-replicate":
+    _LLM = GraniteReplicateAdapter()
+elif LLM_PROVIDER == "fake":
+    _LLM = FakeAdapter(response="RAG stub answer")
+else:
+    _LLM = GraniteWatsonXAdapter()
 
 # Retrieval provider selection
 RETRIEVAL_PROVIDER = os.getenv("RETRIEVAL_PROVIDER", "keyword").lower()  # keyword | embedding

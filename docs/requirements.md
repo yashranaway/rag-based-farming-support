@@ -8,8 +8,21 @@ Set the following environment variables to control runtime behavior. Defaults ar
   - Values: 0|1 (default: 0)
   - When 1, `/v1/query` uses the orchestrated RAG path.
 
-- GRANITE_API_KEY
-  - When set, uses `GraniteAdapter`; otherwise uses `FakeAdapter`.
+- LLM_PROVIDER
+  - Values: `granite-wx` (default) | `granite-replicate` | `fake`
+  - Selects which LLM adapter to use. All current adapters are stubbed for local dev.
+  - `granite-wx` uses `GraniteWatsonXAdapter` (no network call in stub mode)
+  - `granite-replicate` uses `GraniteReplicateAdapter` (no network call in stub mode)
+  - `fake` uses `FakeAdapter`
+
+- LLM parameters (passed programmatically in code; defaults are safe):
+  - `temperature` (float, default 0.2)
+  - `max_tokens` (int, default 256)
+  - `stop` (list of strings) — output truncates at first matched stop sequence
+
+- LLM_SIMULATE_ERROR
+  - Values: `quota` | `credit` | (unset)
+  - For tests/dev only: simulate provider errors in stubs
 
 - FEATURE_VISION
   - Values: 0|1 (default: 0)

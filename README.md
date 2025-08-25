@@ -13,8 +13,8 @@ Project: rag-based-farming-support
 - [x] 5. Ingestion pipeline — testing complete
 - [x] 6. Embeddings and Vector Store — testing complete
 - [x] 7. Retriever and ranking — testing complete
-- [ ] 8. Prompt builder (partial)
-- [ ] 9. Granite LLM adapter (partial)
+- [x] 8. Prompt builder — testing complete
+- [x] 9. Granite LLM adapter — testing complete
 - [ ] 10. Query orchestration (partial)
 - [ ] 11. Admin endpoints
 - [ ] 12. Observability and logging (partial)

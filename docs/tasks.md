@@ -52,7 +52,7 @@
   - Unit tests for ranking/freshness behavior
   - _Requirements: 2.1–2.5, 12.2_
 
-- [ ] 8. Prompt builder (partial)
+- [x] 8. Prompt builder — testing complete
   - Implement `TokenizerChatPromptTemplate`-based builder with:
     - System policies (safety, tone, language)
     - Retrieved snippets with citation metadata
@@ -61,11 +61,11 @@
   - Unit tests for template assembly and budgeting
   - _Requirements: 1.3–1.5, 2.1–2.4, 3.2, 12.2, 10.3_
 
-- [ ] 9. Granite LLM adapter (partial)
+- [x] 9. Granite LLM adapter — testing complete
   - Implement provider abstraction for watsonx.ai Granite and Replicate Granite
   - Streaming output support; configurable temperature/max_tokens/stop
   - Contract tests (stubbed providers); error handling for quota/credit failures
-  - _Status: GraniteAdapter scaffold with deterministic stub implemented and tested; real providers, streaming, and errors pending_
+  - _Status: Adapters completed with streaming, parameters (temperature/max_tokens/stop), and simulated error modes; comprehensive tests added_
   - _Requirements: 9.1, 11.2, 12.1, 12.3_
 
 - [ ] 10. Query orchestration (partial)
