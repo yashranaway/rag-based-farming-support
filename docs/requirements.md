@@ -31,12 +31,6 @@ Set the following environment variables to control runtime behavior. Defaults ar
   - Values: 0|1 (default: 0)
   - When 1, applies a simple reranker that boosts authoritative sources.
 
-# Development Policy
-
-- Upon completing any task (as tracked in `docs/tasks.md`), immediately:
-  - Commit the changes with a clear message, and
-  - Push to the `main` branch of the remote repository.
-
 # Requirements Document
 
 ## Introduction
