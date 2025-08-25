@@ -16,11 +16,9 @@ Project: rag-based-farming-support
 - [x] 8. Prompt builder — testing complete
 - [x] 9. Granite LLM adapter — testing complete
 - [x] 10. Query orchestration — testing complete
-- [ ] 11. Admin endpoints
-- [ ] 12. Observability and logging (partial)
+- [x] 11. Admin endpoints — testing complete
+- [x] 12. Observability and logging — testing complete
 - [ ] 13. Evaluation harness
 - [ ] 14. Safety tests
 - [ ] 15. Performance/cost controls
 - [ ] 16. IBM Cloud Lite readiness
-
-

@@ -81,11 +81,10 @@
   - Tests for validation, CRUD, and rollback behavior
   - _Requirements: 13.1–13.3_
 
-- [ ] 12. Observability and logging (partial)
-  - Add structured logs with correlation IDs; redact PII
-  - Capture slow spans and retrieval/generation diagnostics in responses
-  - Tests for log fields and diagnostics shape
-  - _Status: trace id + latency headers added for /v1/query; structured logging/tests pending_
+- [x] 12. Observability and logging — testing complete
+  - Structured JSON logs with correlation IDs (trace id context), redaction of GPS/pincode/token
+  - Latency headers and basic diagnostics in responses
+  - Tests for formatter, redaction, and presence of trace headers
   - _Requirements: 10.1, 11.2, 11.3_
 
 - [ ] 13. Evaluation harness

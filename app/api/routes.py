@@ -30,6 +30,7 @@ from app.services.llm import (
 )
 from app.services.embeddings import SimpleTokenizerEmbeddings
 from app.services.vectorstore import vector_store_from_env
+from app.services.observability import set_trace_id, get_logger, redact_payload
 from app.services.templates import TemplateRegistry
 
 api_router = APIRouter()
@@ -80,7 +81,9 @@ def _get_retriever():
 async def query(req: QueryRequest):
     """Query endpoint using feature-flagged orchestrator pipeline."""
     trace_id = str(uuid.uuid4())
+    set_trace_id(trace_id)
     t0 = time.perf_counter()
+    log = get_logger("api.query")
 
     # Determine response language using prefs > locale > detected
     detected = detect_language(req.text)
@@ -115,6 +118,20 @@ async def query(req: QueryRequest):
         },
     )
     headers = {"X-Trace-Id": trace_id, "X-Elapsed-Ms": str(elapsed_ms)}
+    try:
+        log.info(
+            "handled query",
+            extra={
+                "extra": {
+                    "elapsed_ms": elapsed_ms,
+                    "feature_orchestrator": FEATURE_ORCHESTRATOR,
+                    "language": language,
+                    "request": redact_payload(req.model_dump() if hasattr(req, "model_dump") else {}),
+                }
+            },
+        )
+    except Exception:
+        pass
     return JSONResponse(resp.model_dump(), headers=headers)
 
 
@@ -142,6 +159,7 @@ async def admin_reindex(req: ReindexRequest):
     # If embedding retriever is active, refresh index
     if RETRIEVAL_PROVIDER == "embedding":
         index_store_chunks(_STORE, _EMB, _VS)
+    get_logger("api.admin").info("reindex", extra={"extra": {"has_text": True, "region": req.region or "", "crop": req.crop or ""}})
     return {"status": "ok", "message": "ingested"}
 
 
@@ -151,6 +169,7 @@ async def admin_template_set(name: str, req: TemplateSetRequest):
     if not content:
         raise HTTPException(status_code=400, detail="content must be non-empty")
     tv = _TPL.set(name, content)
+    get_logger("api.admin").info("template_set", extra={"extra": {"name": name, "version": tv.version}})
     return {"status": "ok", "name": name, "version": tv.version, "created_at": tv.created_at}
 
 
@@ -188,6 +207,7 @@ async def admin_template_rollback(name: str, req: TemplateRollbackRequest):
 async def query_stream(req: QueryRequest):
     """Streaming answer chunks from orchestrator."""
     trace_id = str(uuid.uuid4())
+    set_trace_id(trace_id)
     t0 = time.perf_counter()
 
     detected = detect_language(req.text)
@@ -203,4 +223,5 @@ async def query_stream(req: QueryRequest):
     orch = QueryOrchestrator(retriever, _LLM)
     gen = orch.run_stream(req.text, language=language, filters={})
     headers = {"X-Trace-Id": trace_id, "X-Elapsed-Ms": str(int((time.perf_counter()-t0)*1000))}
+    get_logger("api.query").info("handled query stream", extra={"extra": {"language": language}})
     return StreamingResponse(gen, media_type="text/plain", headers=headers)
