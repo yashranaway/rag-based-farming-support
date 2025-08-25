@@ -1,0 +1,65 @@
+Temporary / Dev-only Components (to replace or harden before production)
+======================================================================
+
+External APIs and Data Sources (target, prefer free tiers)
+---------------------------------------------------------
+- Weather (IMD or alternatives):
+  - IMD public bulletins/FTP where allowed; fallback: Open-Meteo (free, no key), OpenWeatherMap (free tier).
+- Market Prices (Mandi/eNAM):
+  - eNAM public dashboards/CSV endpoints where available; state agri boards with public price feeds.
+- Govt Advisories/Schemes:
+  - agrisnet.gov.in, icar.org.in, kvk.icar.gov.in, state agri department advisories, PIB press releases.
+- Soil/Agri Knowledge Bases:
+  - ICAR publications, FAO manuals (public), Krishi Vigyan Kendra resources.
+- Geocoding/Reverse geocoding (for production mapping only):
+  - Nominatim (OpenStreetMap) free tier with rate limits; Google Maps (paid after free), OpenCage (free tier).
+
+1) Language Detection (heuristic)
+   - File: app/services/lang.py (detect_language)
+   - Status: Lightweight Unicode-block heuristic for Indian scripts; not ML-grade.
+   - Replace with: Robust detector (fastText, lingua, or Granite text-classification) with proper evaluation.
+
+2) In-Memory Upsert Store
+   - File: app/services/ingestion.py (UpsertStore)
+   - Status: Volatile, single-process memory; no persistence or concurrency.
+   - Replace with: Vector DB (Milvus/OpenSearch) and object store/DB for docs.
+
+3) InMemoryRetriever (keyword-based)
+   - File: app/services/retrieval.py (InMemoryRetriever)
+   - Status: Simple token frequency scorer; no embeddings or BM25.
+   - Replace with: Embedding-based retriever (Granite embeddings + vector store), optional BM25 fallback.
+
+4) PromptBuilder (basic)
+   - File: app/services/prompting.py (PromptBuilder)
+   - Status: Minimal context formatting; no safety filters or guardrails.
+   - Replace with: Production prompt templates, safety/guardrail layers, and token budgeting.
+
+5) QueryOrchestrator (stubbed)
+   - File: app/services/orchestrator.py (QueryOrchestrator)
+   - Status: Linear flow without observability, retries, or circuit breakers.
+   - Replace with: Orchestrator with tracing, metrics, retries, backoff, and policy checks.
+
+6) GraniteAdapter (stub)
+   - File: app/services/llm.py (GraniteAdapter)
+   - Status: No network calls; deterministic stub response; no streaming.
+   - Replace with: Real HTTP client to IBM Granite (when API key available), streaming support, error handling.
+
+7) Connectors (mock-first)
+   - File: app/services/connectors.py (WeatherClient, MandiClient, SoilClient, GovtClient)
+   - Status: Returns canned/mock data.
+   - Replace with: Actual API integrations (IMD, eNAM, ICAR/KVK, govt portals), caching, and auth.
+
+8) Tests relying on stubs
+   - Files: tests/test_*.py referencing FakeAdapter, InMemoryRetriever, UpsertStore, mock connectors.
+   - Status: Unit tests target scaffolding; no integration tests.
+   - Replace with: Integration tests against staging services and vector DB; contract tests for connectors.
+
+9) /v1/query placeholder answer decoration
+   - File: app/api/routes.py
+   - Status: Includes selected language code in placeholder string.
+   - Replace with: Real RAG answer and localized phrasing via LLM.
+
+10) Location normalization (basic)
+    - File: app/services/location.py
+    - Status: Simple validation/normalization; no geocoding, no pincode-to-district mapping.
+    - Replace with: Geocoding/administrative mapping, canonical region taxonomy, and error handling.
