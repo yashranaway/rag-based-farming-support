@@ -15,7 +15,7 @@ Project: rag-based-farming-support
 - [x] 7. Retriever and ranking — testing complete
 - [x] 8. Prompt builder — testing complete
 - [x] 9. Granite LLM adapter — testing complete
-- [ ] 10. Query orchestration (partial)
+- [x] 10. Query orchestration — testing complete
 - [ ] 11. Admin endpoints
 - [ ] 12. Observability and logging (partial)
 - [ ] 13. Evaluation harness

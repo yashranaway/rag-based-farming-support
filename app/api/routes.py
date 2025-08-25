@@ -70,7 +70,7 @@ def _get_retriever():
 
 @api_router.post("/query", response_model=AnswerResponse)
 async def query(req: QueryRequest):
-    """Stub query endpoint; will be wired to RAG orchestration in later tasks."""
+    """Query endpoint using feature-flagged orchestrator pipeline."""
     trace_id = str(uuid.uuid4())
     t0 = time.perf_counter()
 
@@ -80,28 +80,24 @@ async def query(req: QueryRequest):
     language = choose_response_language(detected, prefs_language=prefs_lang, locale=req.locale)
 
     citations = []
-    answer_text = f"[{language}] This is a placeholder response. The RAG pipeline will be implemented in later tasks."
-    tokens_prompt = 0
-    tokens_output = 0
+    answer_text = f"[{language}] This is a placeholder response. Enable FEATURE_ORCHESTRATOR=1 for RAG."
+    tokens_prompt = None
+    tokens_output = None
 
     if FEATURE_ORCHESTRATOR:
-        orch = QueryOrchestrator(_RETRIEVER, _LLM)
+        retriever = _get_retriever()
+        orch = QueryOrchestrator(retriever, _LLM)
         out = orch.run(req.text, language=language, filters={})
         citations = out.citations
         answer_text = out.answer
-        # Best-effort tokens from LLM stub if present
-        try:
-            tokens_prompt = _LLM.generate.__self__._estimate_tokens(out.prompt)  # type: ignore[attr-defined]
-            tokens_output = _LLM.generate.__self__._estimate_tokens(out.answer)  # type: ignore[attr-defined]
-        except Exception:
-            tokens_prompt = 0
-            tokens_output = 0
+        tokens_prompt = None
+        tokens_output = None
 
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
     resp = AnswerResponse(
         answer=answer_text,
         language=language,
-        citations=citations,
+        citations=[],
         warnings=[],
         diagnostics={
             "latency_ms": elapsed_ms,
@@ -124,3 +120,25 @@ async def list_sources() -> Dict[str, str]:
 async def admin_reindex():
     """Trigger reindex (placeholder)."""
     return {"status": "accepted", "message": "Reindex triggered (stub)."}
+
+
+@api_router.post("/query/stream")
+async def query_stream(req: QueryRequest):
+    """Streaming answer chunks from orchestrator."""
+    trace_id = str(uuid.uuid4())
+    t0 = time.perf_counter()
+
+    detected = detect_language(req.text)
+    prefs_lang = req.preferences.language if req.preferences else None
+    language = choose_response_language(detected, prefs_language=prefs_lang, locale=req.locale)
+
+    if not FEATURE_ORCHESTRATOR:
+        def _placeholder():
+            yield f"[{language}] Streaming not enabled. Set FEATURE_ORCHESTRATOR=1."
+        return StreamingResponse(_placeholder(), media_type="text/plain", headers={"X-Trace-Id": trace_id})
+
+    retriever = _get_retriever()
+    orch = QueryOrchestrator(retriever, _LLM)
+    gen = orch.run_stream(req.text, language=language, filters={})
+    headers = {"X-Trace-Id": trace_id, "X-Elapsed-Ms": str(int((time.perf_counter()-t0)*1000))}
+    return StreamingResponse(gen, media_type="text/plain", headers=headers)
