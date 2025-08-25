@@ -34,15 +34,15 @@ External APIs and Data Sources (target, prefer free tiers)
    - Status: Minimal context formatting; no safety filters or guardrails.
    - Replace with: Production prompt templates, safety/guardrail layers, and token budgeting.
 
-5) QueryOrchestrator (stubbed)
+5) QueryOrchestrator (basic, feature-flagged)
    - File: app/services/orchestrator.py (QueryOrchestrator)
-   - Status: Linear flow without observability, retries, or circuit breakers.
-   - Replace with: Orchestrator with tracing, metrics, retries, backoff, and policy checks.
+   - Status: Linear flow with intent classification, external signals (weather/mandi), safety intercept, and streaming. Lacks observability, retries, and circuit breakers.
+   - Replace with: Orchestrator with tracing/metrics, retries/backoff, policy checks, and robust error handling.
 
-6) GraniteAdapter (stub)
-   - File: app/services/llm.py (GraniteAdapter)
-   - Status: No network calls; deterministic stub response; no streaming.
-   - Replace with: Real HTTP client to IBM Granite (when API key available), streaming support, error handling.
+6) Granite adapters (stubs)
+   - File: app/services/llm.py (GraniteWatsonXAdapter, GraniteReplicateAdapter, FakeAdapter)
+   - Status: No network calls; deterministic stub responses with streaming, temperature/max_tokens/stop, and simulated error modes.
+   - Replace with: Real clients to Granite providers; robust streaming, rate-limit handling, and telemetry.
 
 7) Connectors (mock-first)
    - File: app/services/connectors.py (WeatherClient, MandiClient, SoilClient, GovtClient)
@@ -54,12 +54,22 @@ External APIs and Data Sources (target, prefer free tiers)
    - Status: Unit tests target scaffolding; no integration tests.
    - Replace with: Integration tests against staging services and vector DB; contract tests for connectors.
 
-9) /v1/query placeholder answer decoration
+9) /v1/query (feature-flagged orchestration)
    - File: app/api/routes.py
-   - Status: Includes selected language code in placeholder string.
-   - Replace with: Real RAG answer and localized phrasing via LLM.
+   - Status: Orchestrated RAG path when FEATURE_ORCHESTRATOR=1; placeholder response when disabled.
+   - Replace with: Always-on orchestrated path plus localized phrasing and diagnostics.
 
 10) Location normalization (basic)
     - File: app/services/location.py
     - Status: Simple validation/normalization; no geocoding, no pincode-to-district mapping.
     - Replace with: Geocoding/administrative mapping, canonical region taxonomy, and error handling.
+
+11) TemplateRegistry (in-memory)
+    - File: app/services/templates.py
+    - Status: Versioned prompt/policy templates stored in-process without persistence.
+    - Replace with: Persistent template store (DB/files), audit logs, and access controls.
+
+12) Admin endpoints (dev-only, unauthenticated)
+    - File: app/api/routes.py (/v1/admin/*)
+    - Status: Reindex endpoint and template CRUD/rollback without auth or rate limits.
+    - Replace with: AuthN/Z, rate limiting, request validation, and audit trail.
