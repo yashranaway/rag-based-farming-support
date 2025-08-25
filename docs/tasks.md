@@ -98,10 +98,11 @@
   - Feature flag evaluation fixed at request-time to allow tests to toggle orchestrator
   - _Requirements: 5.2, 10.3, 14.3_
 
-- [ ] 15. Performance/cost controls
-  - First-token streaming target checks; rate limit middleware
-  - Token budgeting across retrieval and generation; enforce caps
-  - Tests for throttling and budgeting behavior
+- [x] 15. Performance/cost controls — testing complete
+  - Added in-memory sliding-window rate limiter middleware (per-IP), disabled by default; enable via `RATE_LIMIT_ENABLED=1`
+  - Response headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+  - Token budgeting: enforce `MAX_GENERATE_TOKENS` cap in orchestrator and expose `tokens_prompt`/`tokens_output` in diagnostics
+  - New tests: `tests/test_rate_limit_and_budget.py`
   - _Requirements: 12.1–12.3_
 
 - [ ] 16. IBM Cloud Lite readiness

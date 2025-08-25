@@ -99,7 +99,8 @@ async def query(req: QueryRequest):
     if is_orchestrator_enabled():
         retriever = _get_retriever()
         orch = QueryOrchestrator(retriever, _LLM)
-        out = orch.run(req.text, language=language, filters={})
+        max_gen = int(os.getenv("MAX_GENERATE_TOKENS", "256"))
+        out = orch.run(req.text, language=language, filters={}, max_generate_tokens=max_gen)
         # Map internal citations (doc_id/chunk_index/source_url) to API model shape
         citations = []
         for c in out.citations:
@@ -107,8 +108,8 @@ async def query(req: QueryRequest):
             url = c.get("source_url") or None
             citations.append({"title": title, "url": url})
         answer_text = out.answer
-        tokens_prompt = None
-        tokens_output = None
+        tokens_prompt = out.tokens_prompt
+        tokens_output = out.tokens_output
 
     elapsed_ms = int((time.perf_counter() - t0) * 1000)
     resp = AnswerResponse(

@@ -78,3 +78,8 @@ External APIs and Data Sources (target, prefer free tiers)
     - File: app/services/eval.py
     - Status: Heuristic metrics (groundedness/relevance/citation accuracy) over a small JSONL dataset; uses current stubs.
     - Replace with: Robust eval with gold references, model-graded judgments, corpus-level reports, and CI gating; optional admin endpoint `/v1/admin/eval` with auth.
+
+14) Rate limiting middleware (dev-only)
+    - File: app/main.py (rate_limit_middleware)
+    - Status: Simple in-memory sliding window, per-IP; disabled by default (enable with RATE_LIMIT_ENABLED=1). Not suitable for multi-instance deployments.
+    - Replace with: External/shared rate limiter (e.g., Redis token bucket) with per-key quotas and real client identifiers; integrate with API gateway.

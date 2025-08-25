@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any, Iterable
 
@@ -15,6 +16,8 @@ class OrchestratorResult:
     citations: List[Dict[str, str]]
     prompt: str
     language: str
+    tokens_prompt: Optional[int] = None
+    tokens_output: Optional[int] = None
 
 
 class QueryOrchestrator:
@@ -65,6 +68,7 @@ class QueryOrchestrator:
         filters: Optional[Dict[str, str]] = None,
         k: int = 4,
         max_context_tokens: Optional[int] = None,
+        max_generate_tokens: Optional[int] = None,
         external_signals: Optional[Dict[str, Any]] = None,
     ) -> OrchestratorResult:
         filters = filters or {}
@@ -79,13 +83,17 @@ class QueryOrchestrator:
         chunks = [r.chunk for r in results]
         pb = PromptBuilder(language=language)
         built = pb.build(question, chunks, max_context_tokens=max_context_tokens, external_signals=signals)
-        llm_out = self.llm.generate(built.prompt)
+        # Enforce generation token cap
+        gen_cap = max_generate_tokens if max_generate_tokens is not None else int(os.getenv("MAX_GENERATE_TOKENS", "256"))
+        llm_out = self.llm.generate(built.prompt, max_tokens=gen_cap)
         intercepted = self._safety_intercept(question, llm_out.text)
         return OrchestratorResult(
             answer=intercepted or llm_out.text,
             citations=built.citations,
             prompt=built.prompt,
             language=language,
+            tokens_prompt=getattr(llm_out, "tokens_prompt", None),
+            tokens_output=getattr(llm_out, "tokens_output", None),
         )
 
     def run_stream(
@@ -96,6 +104,7 @@ class QueryOrchestrator:
         filters: Optional[Dict[str, str]] = None,
         k: int = 4,
         max_context_tokens: Optional[int] = None,
+        max_generate_tokens: Optional[int] = None,
         external_signals: Optional[Dict[str, Any]] = None,
     ) -> Iterable[str]:
         """Yield answer tokens in a streaming fashion from the LLM."""
@@ -114,5 +123,6 @@ class QueryOrchestrator:
         preface = self._safety_intercept(question, "")
         if preface:
             yield preface
-        for part in self.llm.stream_generate(built.prompt):
+        gen_cap = max_generate_tokens if max_generate_tokens is not None else int(os.getenv("MAX_GENERATE_TOKENS", "256"))
+        for part in self.llm.stream_generate(built.prompt, max_tokens=gen_cap):
             yield part
