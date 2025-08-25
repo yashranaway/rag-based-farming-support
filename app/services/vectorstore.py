@@ -103,4 +103,35 @@ def vector_store_from_env(client: Optional[Any] = None, *, index: str = "rag-chu
         if client is None:
             raise ValueError("OpenSearch client must be provided when VECTOR_PROVIDER=opensearch")
         return OpenSearchVectorStore(client=client, index_name=index, dim=dim)
+    if provider == "milvus":
+        if client is None:
+            raise ValueError("Milvus client must be provided when VECTOR_PROVIDER=milvus")
+        return MilvusVectorStore(client=client, collection=index, dim=dim)
     return InMemoryVectorStore()
+
+
+class MilvusVectorStore:
+    """
+    Minimal Milvus adapter (client injected, mock-friendly) for IBM Cloud Lite smoke tests.
+    Assumes `client` exposes `upsert` and `search`-like methods used below (can be a fake in tests).
+    """
+
+    def __init__(self, client: Any, collection: str, dim: int) -> None:
+        self.client = client
+        self.collection = collection
+        self.dim = dim
+
+    def upsert(self, ids: List[str], vectors: List[List[float]], metadatas: List[Dict[str, str]]) -> None:
+        # Delegate to injected client; tests can assert call shape
+        self.client.upsert(self.collection, ids, vectors, metadatas)
+
+    def similarity_search(self, query: List[float], k: int = 5, filter: Dict[str, str] | None = None) -> List[Tuple[VSItem, float]]:
+        res = self.client.search(self.collection, query, k=k, filter=filter)
+        out: List[Tuple[VSItem, float]] = []
+        for r in res:
+            _id = r.get("id")
+            score = float(r.get("score", 0.0))
+            meta = r.get("metadata", {})
+            vec = r.get("vector", [0.0] * self.dim)
+            out.append((VSItem(id=_id, vector=vec, metadata=meta), score))
+        return out[:k]

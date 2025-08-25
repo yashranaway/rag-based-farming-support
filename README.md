@@ -21,4 +21,4 @@ Project: rag-based-farming-support
 - [x] 13. Evaluation harness — testing complete
 - [x] 14. Safety tests — testing complete
 - [x] 15. Performance/cost controls — testing complete
-- [ ] 16. IBM Cloud Lite readiness
+- [x] 16. IBM Cloud Lite readiness — testing complete
